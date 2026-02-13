@@ -103,8 +103,14 @@ jobs:
       with:
         urls: https://ssankar7775.github.io/Surge
         configPath: .lighthouserc.json
-        uploadArtifacts: true
-        temporaryPublicStorage: true
+
+    - name: Upload Lighthouse results
+      uses: actions/upload-artifact@v4
+      with:
+        name: lighthouse-results
+        path: |
+          .lighthouseci/
+          lighthouse-results.json
 
   notify:
     needs: [test, deploy, lighthouse]
