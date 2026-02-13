@@ -22,6 +22,7 @@
             <nav class="main-nav">
                 <button id="power-budget-btn" class="nav-btn active">Power Budget</button>
                 <button id="link-budget-btn" class="nav-btn">Link Budget</button>
+                <button id="system-performance-btn" class="nav-btn">System Performance</button>
             </nav>
         </div>
     </header>
@@ -158,74 +159,219 @@
                 </div>
                 <ul id="modes-list"></ul>
             </div>
+
+            <!-- Power System Performance Charts -->
+            <section id="power-charts-section" class="charts-container">
+                <h2>Power System Performance Analysis</h2>
+                <div class="charts-grid">
+                    <div class="chart-wrapper">
+                        <h3>Power Consumption by Mode</h3>
+                        <canvas id="powerByModeChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Energy Distribution</h3>
+                        <canvas id="energyDistributionChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Power vs Time</h3>
+                        <canvas id="powerTimeChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Battery Capacity Analysis</h3>
+                        <canvas id="batteryAnalysisChart"></canvas>
+                    </div>
+                </div>
+            </section>
         </section>
+
         <section id="link-budget-section" class="budget-section hidden">
-            <h2>Link Budget</h2>
-            <form id="link-budget-form">
-                <div class="form-group">
-                    <label for="frequency">Frequency (GHz):</label>
-                    <input type="number" id="frequency" step="0.01" required>
+            <h2>Link Budget Calculator</h2>
+            <div class="link-budget-container">
+                <div class="link-budget-form-section">
+                    <h3>Link Parameters</h3>
+                    <form id="link-budget-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="frequency">Frequency (GHz):</label>
+                                <input type="number" id="frequency" step="0.01" value="2.4" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="transmit-power">Transmit Power (dBW):</label>
+                                <input type="number" id="transmit-power" step="0.01" value="10" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="transmit-gain">Transmit Antenna Gain (dBi):</label>
+                                <input type="number" id="transmit-gain" step="0.01" value="15" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="transmit-losses">Transmit Losses (dB):</label>
+                                <input type="number" id="transmit-losses" step="0.01" value="1" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="distance">Distance (km):</label>
+                                <input type="number" id="distance" step="0.01" value="1000" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="receive-gain">Receive Antenna Gain (dBi):</label>
+                                <input type="number" id="receive-gain" step="0.01" value="20" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="receive-losses">Receive Losses (dB):</label>
+                                <input type="number" id="receive-losses" step="0.01" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="atmospheric-loss">Atmospheric Loss (dB):</label>
+                                <input type="number" id="atmospheric-loss" step="0.01" value="0.5" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="noise-temp">System Noise Temperature (K):</label>
+                                <input type="number" id="noise-temp" step="0.01" value="290" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="bandwidth">Bandwidth (Hz):</label>
+                                <input type="number" id="bandwidth" step="0.01" value="1000000" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="required-snr">Required SNR (dB):</label>
+                                <input type="number" id="required-snr" step="0.01" value="10" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="modulation-loss">Modulation Loss (dB):</label>
+                                <input type="number" id="modulation-loss" step="0.01" value="2" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Calculate Link Budget</button>
+                            <button type="button" id="reset-link-budget" class="btn-secondary">Reset</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="form-group">
-                    <label for="transmit-power">Transmit Power (dBW):</label>
-                    <input type="number" id="transmit-power" step="0.01" required>
+
+                <div class="link-budget-results-section">
+                    <h3>Link Budget Results</h3>
+                    <div id="link-budget-results" class="results-panel hidden">
+                        <div class="results-grid">
+                            <div class="result-item">
+                                <span class="result-label">EIRP:</span>
+                                <span id="eirp" class="result-value"></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Free Space Path Loss:</span>
+                                <span id="path-loss" class="result-value"></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Received Power:</span>
+                                <span id="received-power" class="result-value"></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Noise Power:</span>
+                                <span id="noise-power" class="result-value"></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">SNR:</span>
+                                <span id="snr" class="result-value"></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Link Margin:</span>
+                                <span id="link-margin" class="result-value"></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Link Status:</span>
+                                <span id="link-status" class="result-value"></span>
+                            </div>
+                            <div class="result-item">
+                                <span class="result-label">Data Rate:</span>
+                                <span id="data-rate" class="result-value"></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="transmit-gain">Transmit Antenna Gain (dBi):</label>
-                    <input type="number" id="transmit-gain" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="distance">Distance (km):</label>
-                    <input type="number" id="distance" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="receive-gain">Receive Antenna Gain (dBi):</label>
-                    <input type="number" id="receive-gain" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="noise-temp">System Noise Temperature (K):</label>
-                    <input type="number" id="noise-temp" step="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="bandwidth">Bandwidth (Hz):</label>
-                    <input type="number" id="bandwidth" step="0.01" required>
-                </div>
-                <button type="submit">Calculate Link Budget</button>
-            </form>
-            <div id="link-budget-results" class="hidden">
-                <h3>Results</h3>
-                <p id="eirp">EIRP: </p>
-                <p id="path-loss">Free Space Path Loss: </p>
-                <p id="received-power">Received Power: </p>
-                <p id="noise-power">Noise Power: </p>
-                <p id="snr">SNR: </p>
-                <p id="link-margin">Link Margin: </p>
             </div>
+
+            <!-- Link Budget Performance Charts -->
+            <section id="link-charts-section" class="charts-container">
+                <h3>Link Performance Analysis</h3>
+                <div class="charts-grid">
+                    <div class="chart-wrapper">
+                        <h4>Link Margin vs Distance</h4>
+                        <canvas id="linkMarginVsDistanceChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>SNR vs Frequency</h4>
+                        <canvas id="snrVsFrequencyChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Received Power vs Transmit Power</h4>
+                        <canvas id="powerVsTxPowerChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Link Budget Breakdown</h4>
+                        <canvas id="linkBudgetBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </section>
+        <section id="system-performance-section" class="budget-section hidden">
+            <h2>System Performance Analysis</h2>
+            <p class="section-description">Comprehensive analysis combining power system and communications link performance for complete mission assessment.</p>
+
+            <!-- Power System Performance Charts -->
+            <section id="system-power-charts-section" class="charts-container">
+                <h3>Power System Performance</h3>
+                <div class="charts-grid">
+                    <div class="chart-wrapper">
+                        <h4>Power Consumption by Mode</h4>
+                        <canvas id="systemPowerByModeChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Energy Distribution</h4>
+                        <canvas id="systemEnergyDistributionChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Power vs Time</h4>
+                        <canvas id="systemPowerTimeChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Battery Capacity Analysis</h4>
+                        <canvas id="systemBatteryAnalysisChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Link Budget Performance Charts -->
+            <section id="system-link-charts-section" class="charts-container">
+                <h3>Communications Link Performance</h3>
+                <div class="charts-grid">
+                    <div class="chart-wrapper">
+                        <h4>Link Margin vs Distance</h4>
+                        <canvas id="systemLinkMarginVsDistanceChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>SNR vs Frequency</h4>
+                        <canvas id="systemSnrVsFrequencyChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Received Power vs Transmit Power</h4>
+                        <canvas id="systemPowerVsTxPowerChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Link Budget Breakdown</h4>
+                        <canvas id="systemLinkBudgetBreakdownChart"></canvas>
+                    </div>
+                </div>
+            </section>
         </section>
     </main>
-
-    <!-- Power System Performance Charts -->
-    <section id="charts-section" class="charts-container">
-        <h2>Power System Performance Analysis</h2>
-        <div class="charts-grid">
-            <div class="chart-wrapper">
-                <h3>Power Consumption by Mode</h3>
-                <canvas id="powerByModeChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <h3>Energy Distribution</h3>
-                <canvas id="energyDistributionChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <h3>Power vs Time</h3>
-                <canvas id="powerTimeChart"></canvas>
-            </div>
-            <div class="chart-wrapper">
-                <h3>Battery Capacity Analysis</h3>
-                <canvas id="batteryAnalysisChart"></canvas>
-            </div>
-        </div>
-    </section>
 
     <script src="script.js"></script>
 </body>

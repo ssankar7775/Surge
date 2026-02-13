@@ -131,8 +131,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     const powerBudgetBtn = document.getElementById('power-budget-btn');
     const linkBudgetBtn = document.getElementById('link-budget-btn');
+    const systemPerformanceBtn = document.getElementById('system-performance-btn');
     const powerSection = document.getElementById('power-budget-section');
     const linkSection = document.getElementById('link-budget-section');
+    const systemPerformanceSection = document.getElementById('system-performance-section');
     const powerTableBody = document.getElementById('power-budget-table').querySelector('tbody');
     const totalPowerDiv = document.getElementById('total-power');
 
@@ -155,15 +157,49 @@ document.addEventListener('DOMContentLoaded', function() {
     powerBudgetBtn.addEventListener('click', function() {
         powerSection.classList.remove('hidden');
         linkSection.classList.add('hidden');
+        systemPerformanceSection.classList.add('hidden');
         powerBudgetBtn.classList.add('active');
         linkBudgetBtn.classList.remove('active');
+        systemPerformanceBtn.classList.remove('active');
     });
 
     linkBudgetBtn.addEventListener('click', function() {
         powerSection.classList.add('hidden');
         linkSection.classList.remove('hidden');
+        systemPerformanceSection.classList.add('hidden');
         powerBudgetBtn.classList.remove('active');
         linkBudgetBtn.classList.add('active');
+        systemPerformanceBtn.classList.remove('active');
+    });
+
+    systemPerformanceBtn.addEventListener('click', function() {
+        powerSection.classList.add('hidden');
+        linkSection.classList.add('hidden');
+        systemPerformanceSection.classList.remove('hidden');
+        powerBudgetBtn.classList.remove('active');
+        linkBudgetBtn.classList.remove('active');
+        systemPerformanceBtn.classList.add('active');
+
+        // Update all charts when switching to system performance
+        updateCharts();
+
+        // If link budget results exist, update link charts
+        if (!linkResults.classList.contains('hidden')) {
+            const freq = parseFloat(document.getElementById('frequency').value);
+            const txPower = parseFloat(document.getElementById('transmit-power').value);
+            const txGain = parseFloat(document.getElementById('transmit-gain').value);
+            const txLosses = parseFloat(document.getElementById('transmit-losses').value);
+            const dist = parseFloat(document.getElementById('distance').value);
+            const rxGain = parseFloat(document.getElementById('receive-gain').value);
+            const rxLosses = parseFloat(document.getElementById('receive-losses').value);
+            const atmLoss = parseFloat(document.getElementById('atmospheric-loss').value);
+            const noiseTemp = parseFloat(document.getElementById('noise-temp').value);
+            const bw = parseFloat(document.getElementById('bandwidth').value);
+            const reqSNR = parseFloat(document.getElementById('required-snr').value);
+            const modLoss = parseFloat(document.getElementById('modulation-loss').value);
+
+            updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+        }
     });
 
     // Model Form
@@ -563,32 +599,98 @@ document.addEventListener('DOMContentLoaded', function() {
         const freq = parseFloat(document.getElementById('frequency').value);
         const txPower = parseFloat(document.getElementById('transmit-power').value);
         const txGain = parseFloat(document.getElementById('transmit-gain').value);
+        const txLosses = parseFloat(document.getElementById('transmit-losses').value);
         const dist = parseFloat(document.getElementById('distance').value);
         const rxGain = parseFloat(document.getElementById('receive-gain').value);
+        const rxLosses = parseFloat(document.getElementById('receive-losses').value);
+        const atmLoss = parseFloat(document.getElementById('atmospheric-loss').value);
         const noiseTemp = parseFloat(document.getElementById('noise-temp').value);
         const bw = parseFloat(document.getElementById('bandwidth').value);
+        const reqSNR = parseFloat(document.getElementById('required-snr').value);
+        const modLoss = parseFloat(document.getElementById('modulation-loss').value);
 
-        if (freq && !isNaN(txPower) && !isNaN(txGain) && dist && !isNaN(rxGain) && noiseTemp && bw) {
-            calculateLinkBudget(freq, txPower, txGain, dist, rxGain, noiseTemp, bw);
+        if (freq > 0 && !isNaN(txPower) && !isNaN(txGain) && dist > 0 && !isNaN(rxGain) &&
+            !isNaN(txLosses) && !isNaN(rxLosses) && !isNaN(atmLoss) && noiseTemp > 0 && bw > 0) {
+            calculateLinkBudget(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
             linkResults.classList.remove('hidden');
         }
     });
 
-    function calculateLinkBudget(freq, txPower, txGain, dist, rxGain, noiseTemp, bw) {
-        const k = 1.38e-23; // Boltzmann constant
-        const eirp = txPower + txGain;
-        const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(freq);
-        const receivedPower = eirp - pathLoss + rxGain;
-        const noisePower = 10 * Math.log10(k * noiseTemp * bw);
-        const snr = receivedPower - noisePower;
-        const linkMargin = snr - 10; // Assuming 10 dB required SNR for simplicity
+    // Reset link budget form
+    document.getElementById('reset-link-budget').addEventListener('click', function() {
+        linkForm.reset();
+        linkResults.classList.add('hidden');
+        // Reset default values
+        document.getElementById('frequency').value = '2.4';
+        document.getElementById('transmit-power').value = '10';
+        document.getElementById('transmit-gain').value = '15';
+        document.getElementById('transmit-losses').value = '1';
+        document.getElementById('distance').value = '1000';
+        document.getElementById('receive-gain').value = '20';
+        document.getElementById('receive-losses').value = '1';
+        document.getElementById('atmospheric-loss').value = '0.5';
+        document.getElementById('noise-temp').value = '290';
+        document.getElementById('bandwidth').value = '1000000';
+        document.getElementById('required-snr').value = '10';
+        document.getElementById('modulation-loss').value = '2';
+    });
 
-        document.getElementById('eirp').textContent = `EIRP: ${eirp.toFixed(2)} dBW`;
-        document.getElementById('path-loss').textContent = `Free Space Path Loss: ${pathLoss.toFixed(2)} dB`;
-        document.getElementById('received-power').textContent = `Received Power: ${receivedPower.toFixed(2)} dBW`;
-        document.getElementById('noise-power').textContent = `Noise Power: ${noisePower.toFixed(2)} dBW`;
-        document.getElementById('snr').textContent = `SNR: ${snr.toFixed(2)} dB`;
-        document.getElementById('link-margin').textContent = `Link Margin: ${linkMargin.toFixed(2)} dB`;
+    function calculateLinkBudget(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        const k = 1.38e-23; // Boltzmann constant
+
+        // Calculate EIRP (Effective Isotropic Radiated Power)
+        const eirp = txPower + txGain - txLosses;
+
+        // Calculate Free Space Path Loss
+        const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(freq);
+
+        // Calculate total losses
+        const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+
+        // Calculate Received Power
+        const receivedPower = txPower + txGain - totalLosses + rxGain;
+
+        // Calculate Noise Power
+        const noisePower = 10 * Math.log10(k * noiseTemp * bw);
+
+        // Calculate SNR
+        const snr = receivedPower - noisePower;
+
+        // Calculate Link Margin
+        const linkMargin = snr - reqSNR - modLoss;
+
+        // Determine link status
+        let linkStatus, statusClass;
+        if (linkMargin >= 3) {
+            linkStatus = "EXCELLENT";
+            statusClass = "success";
+        } else if (linkMargin >= 0) {
+            linkStatus = "MARGINAL";
+            statusClass = "warning";
+        } else {
+            linkStatus = "FAILED";
+            statusClass = "danger";
+        }
+
+        // Calculate theoretical data rate (Shannon-Hartley theorem approximation)
+        const dataRate = bw * Math.log2(1 + Math.pow(10, snr / 10));
+
+        // Update results display
+        document.getElementById('eirp').textContent = `${eirp.toFixed(2)} dBW`;
+        document.getElementById('path-loss').textContent = `${pathLoss.toFixed(2)} dB`;
+        document.getElementById('received-power').textContent = `${receivedPower.toFixed(2)} dBW`;
+        document.getElementById('noise-power').textContent = `${noisePower.toFixed(2)} dBW`;
+        document.getElementById('snr').textContent = `${snr.toFixed(2)} dB`;
+        document.getElementById('link-margin').textContent = `${linkMargin.toFixed(2)} dB`;
+
+        const linkStatusElement = document.getElementById('link-status');
+        linkStatusElement.textContent = linkStatus;
+        linkStatusElement.className = `result-value ${statusClass}`;
+
+        document.getElementById('data-rate').textContent = `${(dataRate / 1e6).toFixed(2)} Mbps`;
+
+        // Update link budget charts
+        updateLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
     }
 
     // Tab switching
@@ -738,11 +840,59 @@ document.addEventListener('DOMContentLoaded', function() {
     let powerTimeChart = null;
     let batteryAnalysisChart = null;
 
+    // Link budget chart instances
+    let linkMarginVsDistanceChart = null;
+    let snrVsFrequencyChart = null;
+    let powerVsTxPowerChart = null;
+    let linkBudgetBreakdownChart = null;
+
+    // System performance chart instances
+    let systemPowerByModeChart = null;
+    let systemEnergyDistributionChart = null;
+    let systemPowerTimeChart = null;
+    let systemBatteryAnalysisChart = null;
+    let systemLinkMarginVsDistanceChart = null;
+    let systemSnrVsFrequencyChart = null;
+    let systemPowerVsTxPowerChart = null;
+    let systemLinkBudgetBreakdownChart = null;
+
     function updateCharts() {
-        updatePowerByModeChart();
-        updateEnergyDistributionChart();
-        updatePowerTimeChart();
-        updateBatteryAnalysisChart();
+        // Always update power charts for power budget and system performance pages
+        if (!powerSection.classList.contains('hidden') || !systemPerformanceSection.classList.contains('hidden')) {
+            updatePowerByModeChart();
+            updateEnergyDistributionChart();
+            updatePowerTimeChart();
+            updateBatteryAnalysisChart();
+
+            // Also update system performance power charts if on system performance page
+            if (!systemPerformanceSection.classList.contains('hidden')) {
+                updateSystemPowerCharts();
+            }
+        }
+
+        // Always update link charts for link budget and system performance pages
+        if (!linkSection.classList.contains('hidden') || !systemPerformanceSection.classList.contains('hidden')) {
+            // Link charts are updated when link budget is calculated, so we don't need to call them here
+            // They will be updated when the user calculates the link budget
+            if (!systemPerformanceSection.classList.contains('hidden')) {
+                // Update system performance link charts if we have link budget data
+                if (!linkResults.classList.contains('hidden')) {
+                    const freq = parseFloat(document.getElementById('frequency').value);
+                    const txPower = parseFloat(document.getElementById('transmit-power').value);
+                    const txGain = parseFloat(document.getElementById('transmit-gain').value);
+                    const txLosses = parseFloat(document.getElementById('transmit-losses').value);
+                    const dist = parseFloat(document.getElementById('distance').value);
+                    const rxGain = parseFloat(document.getElementById('receive-gain').value);
+                    const rxLosses = parseFloat(document.getElementById('receive-losses').value);
+                    const atmLoss = parseFloat(document.getElementById('atmospheric-loss').value);
+                    const noiseTemp = parseFloat(document.getElementById('noise-temp').value);
+                    const bw = parseFloat(document.getElementById('bandwidth').value);
+                    const reqSNR = parseFloat(document.getElementById('required-snr').value);
+                    const modLoss = parseFloat(document.getElementById('modulation-loss').value);
+                    updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+                }
+            }
+        }
     }
 
     function updatePowerByModeChart() {
@@ -1220,6 +1370,1687 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 animation: {
                     duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    // Link Budget Chart Functions
+    function updateLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        updateLinkMarginVsDistanceChart(freq, txPower, txGain, txLosses, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+        updateSnrVsFrequencyChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+        updatePowerVsTxPowerChart(freq, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+        updateLinkBudgetBreakdownChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw);
+    }
+
+    function updateLinkMarginVsDistanceChart(freq, txPower, txGain, txLosses, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        const ctx = document.getElementById('linkMarginVsDistanceChart');
+        if (!ctx) return;
+
+        const distances = [];
+        const margins = [];
+
+        // Generate data points from 100km to 10000km
+        for (let d = 100; d <= 10000; d += 200) {
+            distances.push(d);
+            const pathLoss = 32.4 + 20 * Math.log10(d) + 20 * Math.log10(freq);
+            const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+            const receivedPower = txPower + txGain - totalLosses + rxGain;
+            const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+            const snr = receivedPower - noisePower;
+            const margin = snr - reqSNR - modLoss;
+            margins.push(margin);
+        }
+
+        if (linkMarginVsDistanceChart) linkMarginVsDistanceChart.destroy();
+        linkMarginVsDistanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: distances,
+                datasets: [{
+                    label: 'Link Margin (dB)',
+                    data: margins,
+                    borderColor: 'rgba(0, 212, 255, 1)',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(0, 212, 255, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }, {
+                    label: 'Margin = 0 dB',
+                    data: distances.map(() => 0),
+                    borderColor: 'rgba(255, 107, 53, 0.8)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Distance (km)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Link Margin (dB)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateSnrVsFrequencyChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        const ctx = document.getElementById('snrVsFrequencyChart');
+        if (!ctx) return;
+
+        const frequencies = [];
+        const snrValues = [];
+
+        // Generate data points from 0.1 GHz to 100 GHz
+        for (let f = 0.1; f <= 100; f *= 1.2) {
+            frequencies.push(f);
+            const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(f);
+            const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+            const receivedPower = txPower + txGain - totalLosses + rxGain;
+            const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+            const snr = receivedPower - noisePower;
+            snrValues.push(snr);
+        }
+
+        if (snrVsFrequencyChart) snrVsFrequencyChart.destroy();
+        snrVsFrequencyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: frequencies.map(f => f.toFixed(1)),
+                datasets: [{
+                    label: 'SNR (dB)',
+                    data: snrValues,
+                    borderColor: 'rgba(46, 213, 115, 1)',
+                    backgroundColor: 'rgba(46, 213, 115, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(46, 213, 115, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }, {
+                    label: 'Required SNR',
+                    data: frequencies.map(() => reqSNR + modLoss),
+                    borderColor: 'rgba(255, 107, 53, 0.8)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Frequency (GHz)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        },
+                        type: 'logarithmic'
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'SNR (dB)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updatePowerVsTxPowerChart(freq, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        const ctx = document.getElementById('powerVsTxPowerChart');
+        if (!ctx) return;
+
+        const txPowers = [];
+        const receivedPowers = [];
+        const margins = [];
+
+        // Generate data points from 0 dBW to 50 dBW transmit power
+        for (let p = 0; p <= 50; p += 2) {
+            txPowers.push(p);
+            const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(freq);
+            const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+            const receivedPower = p + txGain - totalLosses + rxGain;
+            receivedPowers.push(receivedPower);
+
+            const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+            const snr = receivedPower - noisePower;
+            const margin = snr - reqSNR - modLoss;
+            margins.push(margin);
+        }
+
+        if (powerVsTxPowerChart) powerVsTxPowerChart.destroy();
+        powerVsTxPowerChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: txPowers,
+                datasets: [{
+                    label: 'Received Power (dBW)',
+                    data: receivedPowers,
+                    borderColor: 'rgba(156, 39, 176, 1)',
+                    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(156, 39, 176, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Link Margin (dB)',
+                    data: margins,
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(255, 193, 7, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Transmit Power (dBW)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Received Power (dBW)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Link Margin (dB)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                            color: 'rgba(255, 193, 7, 0.1)',
+                            borderColor: 'rgba(255, 193, 7, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateLinkBudgetBreakdownChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw) {
+        const ctx = document.getElementById('linkBudgetBreakdownChart');
+        if (!ctx) return;
+
+        const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(2.4); // Using 2.4 GHz for example
+        const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+        const receivedPower = txPower + txGain - totalLosses + rxGain;
+        const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+
+        const breakdownData = [
+            txPower,
+            txGain,
+            -txLosses,
+            -pathLoss,
+            -rxLosses,
+            -atmLoss,
+            rxGain
+        ];
+
+        const breakdownLabels = [
+            'Transmit Power',
+            'Transmit Gain',
+            'Transmit Losses',
+            'Path Loss',
+            'Receive Losses',
+            'Atmospheric Loss',
+            'Receive Gain'
+        ];
+
+        const colors = [
+            'rgba(0, 212, 255, 0.8)',   // Transmit Power - Blue
+            'rgba(46, 213, 115, 0.8)',  // Transmit Gain - Green
+            'rgba(255, 107, 53, 0.8)',  // Transmit Losses - Orange
+            'rgba(244, 67, 54, 0.8)',   // Path Loss - Red
+            'rgba(255, 193, 7, 0.8)',   // Receive Losses - Yellow
+            'rgba(156, 39, 176, 0.8)',  // Atmospheric Loss - Purple
+            'rgba(76, 175, 80, 0.8)'    // Receive Gain - Green
+        ];
+
+        if (linkBudgetBreakdownChart) linkBudgetBreakdownChart.destroy();
+        linkBudgetBreakdownChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: breakdownLabels,
+                datasets: [{
+                    label: 'Power Contribution (dBW)',
+                    data: breakdownData,
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.8', '1')),
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed.y.toFixed(2) + ' dBW';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Power (dBW)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    // System Performance Chart Functions
+    function updateSystemPowerCharts() {
+        // Copy data from main power charts to system performance charts
+        updateSystemPowerByModeChart();
+        updateSystemEnergyDistributionChart();
+        updateSystemPowerTimeChart();
+        updateSystemBatteryAnalysisChart();
+    }
+
+    function updateSystemPowerByModeChart() {
+        const ctx = document.getElementById('systemPowerByModeChart');
+        if (!ctx) return;
+
+        const labels = modes.map(m => m.name);
+        const data = modes.map(m => {
+            let total = 0;
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    total += components[idx].voltage * components[idx].current;
+                }
+            });
+            return total;
+        });
+
+        if (systemPowerByModeChart) systemPowerByModeChart.destroy();
+        systemPowerByModeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.length > 0 ? labels : ['No modes'],
+                datasets: [{
+                    label: 'Power (W)',
+                    data: data.length > 0 ? data : [0],
+                    backgroundColor: 'rgba(0, 212, 255, 0.8)',
+                    borderColor: 'rgba(0, 212, 255, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Power (W)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateSystemEnergyDistributionChart() {
+        const ctx = document.getElementById('systemEnergyDistributionChart');
+        if (!ctx) return;
+
+        const labels = modes.map(m => m.name);
+        const energyData = modes.map(m => {
+            let total = 0;
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    total += components[idx].voltage * components[idx].current * (m.duration || 0);
+                }
+            });
+            return total;
+        });
+
+        if (systemEnergyDistributionChart) systemEnergyDistributionChart.destroy();
+        systemEnergyDistributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.length > 0 ? labels : ['No data'],
+                datasets: [{
+                    data: energyData.length > 0 ? energyData : [1],
+                    backgroundColor: [
+                        'rgba(0, 212, 255, 0.8)',
+                        'rgba(255, 107, 53, 0.8)',
+                        'rgba(46, 213, 115, 0.8)',
+                        'rgba(156, 39, 176, 0.8)',
+                        'rgba(255, 193, 7, 0.8)'
+                    ],
+                    borderColor: 'rgba(10, 10, 10, 0.8)',
+                    borderWidth: 3,
+                    hoverBorderColor: 'rgba(255, 255, 255, 0.8)',
+                    hoverBorderWidth: 4,
+                    shadowColor: 'rgba(0, 212, 255, 0.5)',
+                    shadowBlur: 15,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0',
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 12
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + context.parsed.toFixed(2) + ' Wh (' + percentage + '%)';
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateSystemPowerTimeChart() {
+        const ctx = document.getElementById('systemPowerTimeChart');
+        if (!ctx) return;
+
+        const labels = [];
+        const powerData = [];
+        let cumulativeTime = 0;
+
+        modes.forEach(m => {
+            labels.push((cumulativeTime).toFixed(2) + 'h');
+            let total = 0;
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    total += components[idx].voltage * components[idx].current;
+                }
+            });
+            powerData.push(total);
+            cumulativeTime += m.duration || 0;
+        });
+
+        if (systemPowerTimeChart) systemPowerTimeChart.destroy();
+        systemPowerTimeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.length > 0 ? labels : ['No data'],
+                datasets: [{
+                    label: 'Power Draw (W)',
+                    data: powerData.length > 0 ? powerData : [0],
+                    borderColor: 'rgba(0, 212, 255, 1)',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    borderWidth: 4,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(0, 212, 255, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 3,
+                    pointRadius: 8,
+                    pointHoverRadius: 12,
+                    shadowColor: 'rgba(0, 212, 255, 0.5)',
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 12
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Power (W)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 11
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time (hours)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+    }
+
+    function updateSystemBatteryAnalysisChart() {
+        const ctx = document.getElementById('systemBatteryAnalysisChart');
+        if (!ctx) return;
+
+        const dod = parseFloat(document.getElementById('dod').value) / 100;
+        const efficiency = parseFloat(document.getElementById('efficiency').value) / 100;
+        const busVoltage = parseFloat(document.getElementById('bus-voltage').value);
+
+        let totalEnergy = 0;
+        modes.forEach(m => {
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    totalEnergy += components[idx].voltage * components[idx].current * (m.duration || 0);
+                }
+            });
+        });
+
+        const requiredCapacityWh = totalEnergy / (dod * efficiency) || 0;
+        const requiredCapacityAh = requiredCapacityWh / busVoltage || 0;
+        const margin = Math.max(0, requiredCapacityWh - totalEnergy) / Math.max(1, requiredCapacityWh) * 100 || 0;
+
+        if (systemBatteryAnalysisChart) systemBatteryAnalysisChart.destroy();
+        systemBatteryAnalysisChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Energy Used (Wh)', 'Required Capacity (Wh)', 'Safety Margin (%)'],
+                datasets: [{
+                    label: 'Battery Analysis',
+                    data: [totalEnergy, requiredCapacityWh, margin],
+                    backgroundColor: [
+                        'rgba(245, 127, 23, 0.7)',
+                        'rgba(21, 101, 192, 0.7)',
+                        'rgba(56, 142, 60, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(245, 127, 23, 1)',
+                        'rgba(21, 101, 192, 1)',
+                        'rgba(56, 142, 60, 1)'
+                    ],
+                    borderWidth: 3,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: [
+                        'rgba(245, 127, 23, 1)',
+                        'rgba(21, 101, 192, 1)',
+                        'rgba(56, 142, 60, 1)'
+                    ],
+                    hoverBorderWidth: 4,
+                    shadowColor: 'rgba(0, 212, 255, 0.3)',
+                    shadowBlur: 8,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 2
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataIndex === 2) {
+                                    return 'Safety Margin: ' + context.parsed.x.toFixed(1) + '%';
+                                }
+                                return context.label + ': ' + context.parsed.x.toFixed(2) + ' Wh';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Value',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        updateSystemLinkMarginVsDistanceChart(freq, txPower, txGain, txLosses, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+        updateSystemSnrVsFrequencyChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+        updateSystemPowerVsTxPowerChart(freq, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+        updateSystemLinkBudgetBreakdownChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw);
+    }
+
+    function updateSystemLinkMarginVsDistanceChart(freq, txPower, txGain, txLosses, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        const ctx = document.getElementById('systemLinkMarginVsDistanceChart');
+        if (!ctx) return;
+
+        const distances = [];
+        const margins = [];
+
+        // Generate data points from 100km to 10000km
+        for (let d = 100; d <= 10000; d += 200) {
+            distances.push(d);
+            const pathLoss = 32.4 + 20 * Math.log10(d) + 20 * Math.log10(freq);
+            const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+            const receivedPower = txPower + txGain - totalLosses + rxGain;
+            const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+            const snr = receivedPower - noisePower;
+            const margin = snr - reqSNR - modLoss;
+            margins.push(margin);
+        }
+
+        if (systemLinkMarginVsDistanceChart) systemLinkMarginVsDistanceChart.destroy();
+        systemLinkMarginVsDistanceChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: distances,
+                datasets: [{
+                    label: 'Link Margin (dB)',
+                    data: margins,
+                    borderColor: 'rgba(0, 212, 255, 1)',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(0, 212, 255, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }, {
+                    label: 'Margin = 0 dB',
+                    data: distances.map(() => 0),
+                    borderColor: 'rgba(255, 107, 53, 0.8)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Distance (km)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Link Margin (dB)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateSystemSnrVsFrequencyChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        const ctx = document.getElementById('systemSnrVsFrequencyChart');
+        if (!ctx) return;
+
+        const frequencies = [];
+        const snrValues = [];
+
+        // Generate data points from 0.1 GHz to 100 GHz
+        for (let f = 0.1; f <= 100; f *= 1.2) {
+            frequencies.push(f);
+            const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(f);
+            const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+            const receivedPower = txPower + txGain - totalLosses + rxGain;
+            const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+            const snr = receivedPower - noisePower;
+            snrValues.push(snr);
+        }
+
+        if (systemSnrVsFrequencyChart) systemSnrVsFrequencyChart.destroy();
+        systemSnrVsFrequencyChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: frequencies.map(f => f.toFixed(1)),
+                datasets: [{
+                    label: 'SNR (dB)',
+                    data: snrValues,
+                    borderColor: 'rgba(46, 213, 115, 1)',
+                    backgroundColor: 'rgba(46, 213, 115, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(46, 213, 115, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }, {
+                    label: 'Required SNR',
+                    data: frequencies.map(() => reqSNR + modLoss),
+                    borderColor: 'rgba(255, 107, 53, 0.8)',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Frequency (GHz)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        },
+                        type: 'logarithmic'
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'SNR (dB)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateSystemPowerVsTxPowerChart(freq, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        const ctx = document.getElementById('systemPowerVsTxPowerChart');
+        if (!ctx) return;
+
+        const txPowers = [];
+        const receivedPowers = [];
+        const margins = [];
+
+        // Generate data points from 0 dBW to 50 dBW transmit power
+        for (let p = 0; p <= 50; p += 2) {
+            txPowers.push(p);
+            const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(freq);
+            const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+            const receivedPower = p + txGain - totalLosses + rxGain;
+            receivedPowers.push(receivedPower);
+
+            const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+            const snr = receivedPower - noisePower;
+            const margin = snr - reqSNR - modLoss;
+            margins.push(margin);
+        }
+
+        if (systemPowerVsTxPowerChart) systemPowerVsTxPowerChart.destroy();
+        systemPowerVsTxPowerChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: txPowers,
+                datasets: [{
+                    label: 'Received Power (dBW)',
+                    data: receivedPowers,
+                    borderColor: 'rgba(156, 39, 176, 1)',
+                    backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(156, 39, 176, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Link Margin (dB)',
+                    data: margins,
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                    borderWidth: 3,
+                    fill: false,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(255, 193, 7, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Transmit Power (dBW)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Received Power (dBW)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Link Margin (dB)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                            color: 'rgba(255, 193, 7, 0.1)',
+                            borderColor: 'rgba(255, 193, 7, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateSystemLinkBudgetBreakdownChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw) {
+        const ctx = document.getElementById('systemLinkBudgetBreakdownChart');
+        if (!ctx) return;
+
+        const pathLoss = 32.4 + 20 * Math.log10(dist) + 20 * Math.log10(2.4); // Using 2.4 GHz for example
+        const totalLosses = txLosses + pathLoss + rxLosses + atmLoss;
+        const receivedPower = txPower + txGain - totalLosses + rxGain;
+        const noisePower = 10 * Math.log10(1.38e-23 * noiseTemp * bw);
+
+        const breakdownData = [
+            txPower,
+            txGain,
+            -txLosses,
+            -pathLoss,
+            -rxLosses,
+            -atmLoss,
+            rxGain
+        ];
+
+        const breakdownLabels = [
+            'Transmit Power',
+            'Transmit Gain',
+            'Transmit Losses',
+            'Path Loss',
+            'Receive Losses',
+            'Atmospheric Loss',
+            'Receive Gain'
+        ];
+
+        const colors = [
+            'rgba(0, 212, 255, 0.8)',   // Transmit Power - Blue
+            'rgba(46, 213, 115, 0.8)',  // Transmit Gain - Green
+            'rgba(255, 107, 53, 0.8)',  // Transmit Losses - Orange
+            'rgba(244, 67, 54, 0.8)',   // Path Loss - Red
+            'rgba(255, 193, 7, 0.8)',   // Receive Losses - Yellow
+            'rgba(156, 39, 176, 0.8)',  // Atmospheric Loss - Purple
+            'rgba(76, 175, 80, 0.8)'    // Receive Gain - Green
+        ];
+
+        if (systemLinkBudgetBreakdownChart) systemLinkBudgetBreakdownChart.destroy();
+        systemLinkBudgetBreakdownChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: breakdownLabels,
+                datasets: [{
+                    label: 'Power Contribution (dBW)',
+                    data: breakdownData,
+                    backgroundColor: colors,
+                    borderColor: colors.map(c => c.replace('0.8', '1')),
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 12,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 11
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                return context.label + ': ' + context.parsed.y.toFixed(2) + ' dBW';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 10,
+                                weight: '500'
+                            },
+                            maxRotation: 45,
+                            minRotation: 45
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Power (dBW)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 11,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 10
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1500,
                     easing: 'easeOutQuart'
                 }
             }
