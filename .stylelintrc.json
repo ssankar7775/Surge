@@ -13,7 +13,6 @@
         ]
       }
     ],
-    "declaration-block-trailing-semicolon": "always",
     "no-descending-specificity": null,
     "max-nesting-depth": 4,
     "selector-max-compound-selectors": 4,
@@ -22,12 +21,7 @@
     "color-hex-length": "short",
     "font-family-name-quotes": "always-where-recommended",
     "function-url-quotes": "always",
-    "string-quotes": "single",
-    "value-keyword-case": "lower",
-    "property-case": "lower",
-    "at-rule-name-case": "lower",
-    "selector-case": "lower",
-    "function-name-case": "lower",
-    "unit-case": "lower"
+    "keyframes-name-pattern": null,
+    "no-duplicate-selectors": null
   }
 }
