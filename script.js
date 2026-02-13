@@ -3832,6 +3832,52 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // System Definition Model Management
+  const sysdefSaveNewModelBtn = document.getElementById('sysdef-save-new-model');
+  const sysdefUpdateModelBtn = document.getElementById('sysdef-update-model');
+  const sysdefLoadSelectedModelBtn = document.getElementById('sysdef-load-selected-model');
+  const sysdefExportDataBtn = document.getElementById('sysdef-export-data');
+  const sysdefImportDataBtn = document.getElementById('sysdef-import-data');
+  const sysdefClearAllDataBtn = document.getElementById('sysdef-clear-all-data');
+  const sysdefLoadModelSelect = document.getElementById('sysdef-load-model');
+
+  if (sysdefSaveNewModelBtn) {
+    sysdefSaveNewModelBtn.addEventListener('click', function() {
+      const name = document.getElementById('sysdef-model-name').value.trim();
+      const desc = document.getElementById('sysdef-model-desc').value.trim();
+      if (name) {
+        const modelData = {
+          name,
+          desc,
+          components: [],
+          modes: []
+        };
+        savedModels.push(modelData);
+        saveModelsToStorage();
+        loadModelList();
+        document.getElementById('sysdef-model-name').value = '';
+        document.getElementById('sysdef-model-desc').value = '';
+        showSuccess('Model saved successfully!');
+      } else {
+        alert('Please enter a model name.');
+      }
+    });
+  }
+
+  if (sysdefLoadSelectedModelBtn) {
+    sysdefLoadSelectedModelBtn.addEventListener('click', function() {
+      const selectedModel = sysdefLoadModelSelect.value;
+      if (selectedModel) {
+        const model = savedModels.find(m => m.name === selectedModel);
+        if (model) {
+          document.getElementById('sysdef-model-name').value = model.name;
+          document.getElementById('sysdef-model-desc').value = model.desc || '';
+          showSuccess('Model loaded successfully!');
+        }
+      }
+    });
+  }
+
   // Update charts whenever data changes
   window.updateChartsOnDataChange = function() {
     setTimeout(updateCharts, 100);

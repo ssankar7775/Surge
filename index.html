@@ -409,29 +409,29 @@
                 <h3>Model Management</h3>
                 <p>Save, load, and manage your spacecraft models.</p>
                 <div class="form-group">
-                    <label for="model-name">Model Name:</label>
-                    <input type="text" id="model-name" placeholder="Enter model name">
+                    <label for="sysdef-model-name">Model Name:</label>
+                    <input type="text" id="sysdef-model-name" placeholder="Enter model name">
                 </div>
                 <div class="form-group">
-                    <label for="model-desc">Description (optional):</label>
-                    <textarea id="model-desc" placeholder="Enter description"></textarea>
+                    <label for="sysdef-model-desc">Description (optional):</label>
+                    <textarea id="sysdef-model-desc" placeholder="Enter description"></textarea>
                 </div>
-                <button id="save-new-model">Save as New Model</button>
-                <button id="update-model">Update Current Model</button>
+                <button id="sysdef-save-new-model">Save as New Model</button>
+                <button id="sysdef-update-model">Update Current Model</button>
                 <div class="form-group">
-                    <label for="load-model">Load Model:</label>
-                    <select id="load-model">
+                    <label for="sysdef-load-model">Load Model:</label>
+                    <select id="sysdef-load-model">
                         <option value="">Select a model</option>
                     </select>
-                    <button id="load-selected-model">Load</button>
+                    <button id="sysdef-load-selected-model">Load</button>
                 </div>
-                <div id="current-model-info"></div>
+                <div id="sysdef-current-model-info"></div>
                 <div class="button-group">
-                    <button id="export-data" class="btn-secondary">Export Data</button>
-                    <button id="import-data" class="btn-secondary">Import Data</button>
-                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                    <button id="sysdef-export-data" class="btn-secondary">Export Data</button>
+                    <button id="sysdef-import-data" class="btn-secondary">Import Data</button>
+                    <input type="file" id="sysdef-import-file" accept=".json" style="display: none;">
                 </div>
-                <button id="clear-all-data" style="background-color: #f44336; color: white; margin-top: 1rem;">Clear All Data</button>
+                <button id="sysdef-clear-all-data" style="background-color: #f44336; color: white; margin-top: 1rem;">Clear All Data</button>
                 <p style="color: #666; font-size: 0.9em; margin-top: 0.5rem;">Warning: This will delete all saved models, components, and modes permanently.</p>
             </div>
             <div class="tab-content hidden" id="sysdef-modes-tab">
@@ -446,9 +446,9 @@
                     <select id="sysdef-copy-from">
                         <option value="">None</option>
                     </select>
-                    <button id="add-mode-global">Add Mode</button>
+                    <button id="sysdef-add-mode-global">Add Mode</button>
                 </div>
-                <ul id="modes-list"></ul>
+                <ul id="sysdef-modes-list"></ul>
             </div>
             <div class="tab-content hidden" id="sysdef-library-tab">
                 <h3>Component Library</h3>
