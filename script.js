@@ -2,7 +2,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if Chart.js is loaded
     if (typeof Chart === 'undefined') {
         console.error('Chart.js failed to load. Please check your internet connection and try again.');
-        alert('Chart.js failed to load. Some features may not work properly.');
+        // Only show alert for critical errors, not for local file issues
+        if (window.location.protocol === 'file:') {
+            alert('Chart.js failed to load. Some features may not work properly.');
+        }
     }
 
     // Add loading state management
