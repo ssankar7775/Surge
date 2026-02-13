@@ -36,12 +36,29 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Smooth scrolling for navigation
+  // Tab switching for system definition tabs
   document.querySelectorAll('button[data-tab]').forEach(btn => {
     btn.addEventListener('click', function() {
-      const target = document.getElementById(this.dataset.tab + '-tab');
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const tabName = this.dataset.tab;
+
+      // Remove active class from all tab buttons
+      document.querySelectorAll('.tab-button').forEach(tabBtn => {
+        tabBtn.classList.remove('active');
+      });
+
+      // Add active class to clicked button
+      this.classList.add('active');
+
+      // Hide all tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+      });
+
+      // Show the target tab content
+      const targetTab = document.getElementById(tabName + '-tab');
+      if (targetTab) {
+        targetTab.classList.remove('hidden');
+        targetTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   });
@@ -141,9 +158,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const powerBudgetBtn = document.getElementById('power-budget-btn');
   const linkBudgetBtn = document.getElementById('link-budget-btn');
   const systemPerformanceBtn = document.getElementById('system-performance-btn');
+  const systemDefinitionBtn = document.getElementById('system-definition-btn');
+  const massBudgetBtn = document.getElementById('mass-budget-btn');
   const powerSection = document.getElementById('power-budget-section');
   const linkSection = document.getElementById('link-budget-section');
   const systemPerformanceSection = document.getElementById('system-performance-section');
+  const systemDefinitionSection = document.getElementById('system-definition-section');
+  const massBudgetSection = document.getElementById('mass-budget-section');
   const powerTableBody = document.getElementById('power-budget-table').querySelector('tbody');
   const totalPowerDiv = document.getElementById('total-power');
 
@@ -167,27 +188,39 @@ document.addEventListener('DOMContentLoaded', function() {
     powerSection.classList.remove('hidden');
     linkSection.classList.add('hidden');
     systemPerformanceSection.classList.add('hidden');
+    systemDefinitionSection.classList.add('hidden');
+    massBudgetSection.classList.add('hidden');
     powerBudgetBtn.classList.add('active');
     linkBudgetBtn.classList.remove('active');
     systemPerformanceBtn.classList.remove('active');
+    systemDefinitionBtn.classList.remove('active');
+    massBudgetBtn.classList.remove('active');
   });
 
   linkBudgetBtn.addEventListener('click', function() {
     powerSection.classList.add('hidden');
     linkSection.classList.remove('hidden');
     systemPerformanceSection.classList.add('hidden');
+    systemDefinitionSection.classList.add('hidden');
+    massBudgetSection.classList.add('hidden');
     powerBudgetBtn.classList.remove('active');
     linkBudgetBtn.classList.add('active');
     systemPerformanceBtn.classList.remove('active');
+    systemDefinitionBtn.classList.remove('active');
+    massBudgetBtn.classList.remove('active');
   });
 
   systemPerformanceBtn.addEventListener('click', function() {
     powerSection.classList.add('hidden');
     linkSection.classList.add('hidden');
     systemPerformanceSection.classList.remove('hidden');
+    systemDefinitionSection.classList.add('hidden');
+    massBudgetSection.classList.add('hidden');
     powerBudgetBtn.classList.remove('active');
     linkBudgetBtn.classList.remove('active');
     systemPerformanceBtn.classList.add('active');
+    systemDefinitionBtn.classList.remove('active');
+    massBudgetBtn.classList.remove('active');
 
     // Force update all charts when switching to system performance
     setTimeout(() => {
@@ -213,6 +246,37 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
       }, 200);
     }
+  });
+
+  systemDefinitionBtn.addEventListener('click', function() {
+    powerSection.classList.add('hidden');
+    linkSection.classList.add('hidden');
+    systemPerformanceSection.classList.add('hidden');
+    systemDefinitionSection.classList.remove('hidden');
+    massBudgetSection.classList.add('hidden');
+    powerBudgetBtn.classList.remove('active');
+    linkBudgetBtn.classList.remove('active');
+    systemPerformanceBtn.classList.remove('active');
+    systemDefinitionBtn.classList.add('active');
+    massBudgetBtn.classList.remove('active');
+  });
+
+  massBudgetBtn.addEventListener('click', function() {
+    powerSection.classList.add('hidden');
+    linkSection.classList.add('hidden');
+    systemPerformanceSection.classList.add('hidden');
+    systemDefinitionSection.classList.add('hidden');
+    massBudgetSection.classList.remove('hidden');
+    powerBudgetBtn.classList.remove('active');
+    linkBudgetBtn.classList.remove('active');
+    systemPerformanceBtn.classList.remove('active');
+    systemDefinitionBtn.classList.remove('active');
+    massBudgetBtn.classList.add('active');
+
+    // Update mass budget when switching to it
+    setTimeout(() => {
+      updateMassBudget();
+    }, 100);
   });
 
   // Model Form
@@ -891,6 +955,16 @@ document.addEventListener('DOMContentLoaded', function() {
   let systemPowerVsTxPowerChart = null;
   let systemLinkBudgetBreakdownChart = null;
 
+  // System mass budget chart instances
+  let systemMassByComponentChart = null;
+  let systemMassDistributionChart = null;
+  let systemMassVsPowerChart = null;
+  let systemComponentCountChart = null;
+
+  // Mass budget chart instances
+  let massByComponentChart = null;
+  let massDistributionChart = null;
+
   function updateCharts() {
     // Always update power charts for power budget and system performance pages
     if (!powerSection.classList.contains('hidden') || !systemPerformanceSection.classList.contains('hidden')) {
@@ -902,6 +976,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Also update system performance power charts if on system performance page
       if (!systemPerformanceSection.classList.contains('hidden')) {
         updateSystemPowerCharts();
+        updateSystemMassCharts();
       }
     }
 
@@ -927,6 +1002,11 @@ document.addEventListener('DOMContentLoaded', function() {
           updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
         }
       }
+    }
+
+    // Update mass budget if on mass budget page
+    if (!massBudgetSection.classList.contains('hidden')) {
+      updateMassBudget();
     }
   }
 
@@ -2022,6 +2102,20 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSystemBatteryAnalysisChart();
   }
 
+  function updateSystemMassCharts() {
+    // Check if Chart.js is available
+    if (typeof Chart === 'undefined') {
+      console.warn('Chart.js not available, skipping system mass chart updates');
+      return;
+    }
+
+    // Update system mass performance charts
+    updateSystemMassByComponentChart();
+    updateSystemMassDistributionChart();
+    updateSystemMassVsPowerChart();
+    updateSystemComponentCountChart();
+  }
+
   function updateSystemPowerByModeChart() {
     const ctx = document.getElementById('systemPowerByModeChart');
     if (!ctx) {return;}
@@ -3103,6 +3197,616 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // System Mass Budget Chart Functions
+  function updateSystemMassByComponentChart() {
+    const ctx = document.getElementById('systemMassByComponentChart');
+    if (!ctx) return;
+
+    if (systemMassByComponentChart) {
+      systemMassByComponentChart.destroy();
+    }
+
+    const massBreakdown = {};
+    components.forEach(comp => {
+      if (comp.mass) {
+        const type = comp.name.split(' ')[0] || 'Other';
+        massBreakdown[type] = (massBreakdown[type] || 0) + comp.mass;
+      }
+    });
+
+    const labels = Object.keys(massBreakdown);
+    const data = Object.values(massBreakdown);
+
+    systemMassByComponentChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Mass (kg)',
+          data: data,
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 2,
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'System Mass by Component Type',
+            color: '#e0e0e0',
+            font: {
+              family: 'Orbitron',
+              size: 14,
+              weight: '600'
+            }
+          },
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(255, 99, 132, 0.1)',
+              borderColor: 'rgba(255, 99, 132, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              }
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(255, 99, 132, 0.1)',
+              borderColor: 'rgba(255, 99, 132, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  function updateSystemMassDistributionChart() {
+    const ctx = document.getElementById('systemMassDistributionChart');
+    if (!ctx) return;
+
+    if (systemMassDistributionChart) {
+      systemMassDistributionChart.destroy();
+    }
+
+    const massBreakdown = {};
+    components.forEach(comp => {
+      if (comp.mass) {
+        const type = comp.name.split(' ')[0] || 'Other';
+        massBreakdown[type] = (massBreakdown[type] || 0) + comp.mass;
+      }
+    });
+
+    const labels = Object.keys(massBreakdown);
+    const data = Object.values(massBreakdown);
+
+    systemMassDistributionChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(54, 162, 235, 0.8)',
+            'rgba(255, 205, 86, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)'
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 205, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)'
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'System Mass Distribution',
+            color: '#e0e0e0',
+            font: {
+              family: 'Orbitron',
+              size: 14,
+              weight: '600'
+            }
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 11
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  function updateSystemMassVsPowerChart() {
+    const ctx = document.getElementById('systemMassVsPowerChart');
+    if (!ctx) return;
+
+    if (systemMassVsPowerChart) {
+      systemMassVsPowerChart.destroy();
+    }
+
+    const dataPoints = components.filter(comp => comp.mass && comp.voltage && comp.current).map(comp => ({
+      x: comp.mass,
+      y: comp.voltage * comp.current,
+      name: comp.name
+    }));
+
+    systemMassVsPowerChart = new Chart(ctx, {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: 'Mass vs Power',
+          data: dataPoints,
+          backgroundColor: 'rgba(255, 159, 64, 0.6)',
+          borderColor: 'rgba(255, 159, 64, 1)',
+          borderWidth: 2,
+          pointRadius: 6,
+          pointHoverRadius: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Mass vs Power Consumption',
+            color: '#e0e0e0',
+            font: {
+              family: 'Orbitron',
+              size: 14,
+              weight: '600'
+            }
+          },
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `${context.raw.name}: ${context.parsed.x}kg, ${context.parsed.y.toFixed(2)}W`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            type: 'linear',
+            position: 'bottom',
+            title: {
+              display: true,
+              text: 'Mass (kg)',
+              color: '#e0e0e0',
+              font: {
+                family: 'Rajdhani',
+                size: 12
+              }
+            },
+            grid: {
+              color: 'rgba(255, 159, 64, 0.1)',
+              borderColor: 'rgba(255, 159, 64, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              }
+            }
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Power (W)',
+              color: '#e0e0e0',
+              font: {
+                family: 'Rajdhani',
+                size: 12
+              }
+            },
+            grid: {
+              color: 'rgba(255, 159, 64, 0.1)',
+              borderColor: 'rgba(255, 159, 64, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  function updateSystemComponentCountChart() {
+    const ctx = document.getElementById('systemComponentCountChart');
+    if (!ctx) return;
+
+    if (systemComponentCountChart) {
+      systemComponentCountChart.destroy();
+    }
+
+    const countBreakdown = {};
+    components.forEach(comp => {
+      const type = comp.name.split(' ')[0] || 'Other';
+      countBreakdown[type] = (countBreakdown[type] || 0) + 1;
+    });
+
+    const labels = Object.keys(countBreakdown);
+    const data = Object.values(countBreakdown);
+
+    systemComponentCountChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Component Count',
+          data: data,
+          backgroundColor: 'rgba(75, 192, 192, 0.6)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 2,
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Component Count by Type',
+            color: '#e0e0e0',
+            font: {
+              family: 'Orbitron',
+              size: 14,
+              weight: '600'
+            }
+          },
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(75, 192, 192, 0.1)',
+              borderColor: 'rgba(75, 192, 192, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              },
+              stepSize: 1
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(75, 192, 192, 0.1)',
+              borderColor: 'rgba(75, 192, 192, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  // Mass Budget Functions
+  function updateMassBudget() {
+    const totalMassDiv = document.getElementById('total-mass');
+    const componentCountDiv = document.getElementById('component-count');
+    const massComponentsList = document.getElementById('mass-components-list');
+
+    let totalMass = 0;
+    const massBreakdown = {};
+
+    // Calculate total mass from components
+    components.forEach(comp => {
+      if (comp.mass) {
+        totalMass += comp.mass;
+        const type = comp.name.split(' ')[0] || 'Other'; // Simple categorization
+        massBreakdown[type] = (massBreakdown[type] || 0) + comp.mass;
+      }
+    });
+
+    // Update summary
+    totalMassDiv.textContent = `${totalMass.toFixed(2)} kg`;
+    componentCountDiv.textContent = components.length;
+
+    // Update components list
+    if (components.length > 0) {
+      let html = '<table><tr><th>Component</th><th>Mass (kg)</th></tr>';
+      components.forEach(comp => {
+        html += `<tr><td>${comp.name} (${comp.modelNumber || 'N/A'})</td><td>${comp.mass ? comp.mass.toFixed(2) : 'N/A'}</td></tr>`;
+      });
+      html += `<tr><td><strong>Total</strong></td><td><strong>${totalMass.toFixed(2)}</strong></td></tr>`;
+      html += '</table>';
+      massComponentsList.innerHTML = html;
+    } else {
+      massComponentsList.innerHTML = '<p>No components added yet. Add components in the System Definition > Component Library section.</p>';
+    }
+
+    // Update mass charts
+    updateMassByComponentChart(massBreakdown);
+    updateMassDistributionChart(massBreakdown);
+  }
+
+  function updateMassByComponentChart(massBreakdown) {
+    const ctx = document.getElementById('massByComponentChart');
+    if (!ctx) return;
+
+    if (massByComponentChart) {
+      massByComponentChart.destroy();
+    }
+
+    const labels = Object.keys(massBreakdown);
+    const data = Object.values(massBreakdown);
+
+    massByComponentChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Mass (kg)',
+          data: data,
+          backgroundColor: 'rgba(0, 212, 255, 0.6)',
+          borderColor: 'rgba(0, 212, 255, 1)',
+          borderWidth: 2,
+          borderRadius: 4,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Mass by Component Type',
+            color: '#e0e0e0',
+            font: {
+              family: 'Orbitron',
+              size: 16,
+              weight: '600'
+            }
+          },
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 212, 255, 0.1)',
+              borderColor: 'rgba(0, 212, 255, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              }
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(0, 212, 255, 0.1)',
+              borderColor: 'rgba(0, 212, 255, 0.3)'
+            },
+            ticks: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 10
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  function updateMassDistributionChart(massBreakdown) {
+    const ctx = document.getElementById('massDistributionChart');
+    if (!ctx) return;
+
+    if (massDistributionChart) {
+      massDistributionChart.destroy();
+    }
+
+    const labels = Object.keys(massBreakdown);
+    const data = Object.values(massBreakdown);
+
+    massDistributionChart = new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: [
+            'rgba(0, 212, 255, 0.8)',
+            'rgba(255, 99, 132, 0.8)',
+            'rgba(75, 192, 192, 0.8)',
+            'rgba(255, 205, 86, 0.8)',
+            'rgba(153, 102, 255, 0.8)',
+            'rgba(255, 159, 64, 0.8)'
+          ],
+          borderColor: [
+            'rgba(0, 212, 255, 1)',
+            'rgba(255, 99, 132, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(255, 205, 86, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)'
+          ],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Mass Distribution',
+            color: '#e0e0e0',
+            font: {
+              family: 'Orbitron',
+              size: 16,
+              weight: '600'
+            }
+          },
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#e0e0e0',
+              font: {
+                family: 'Space Mono',
+                size: 11
+              }
+            }
+          }
+        },
+        animation: {
+          duration: 1500,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+  }
+
+  // Component Library Functions
+  function updateGlobalComponentsList() {
+    const list = document.getElementById('global-components-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+    globalComponents.forEach((comp, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        ${comp.name} (${comp.modelNumber || 'N/A'}) - ${comp.voltage}V, ${comp.current}A, ${comp.mass || 0}kg
+        <button onclick="addFromLibrary(${i})">Add to Model</button>
+        <button onclick="removeGlobalComponent(${i})" style="background-color: #f44336;">Remove</button>
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  function addFromLibrary(index) {
+    if (globalComponents[index]) {
+      components.push({...globalComponents[index]});
+      saveComponents();
+      updateComponentsList();
+      updateMassBudget();
+      showSuccess('Component added to model!');
+    }
+  }
+
+  function removeGlobalComponent(index) {
+    if (confirm('Are you sure you want to remove this component from the library?')) {
+      globalComponents.splice(index, 1);
+      saveGlobalComponents();
+      updateGlobalComponentsList();
+      showSuccess('Component removed from library!');
+    }
+  }
+
+  // Initialize global components list
+  updateGlobalComponentsList();
+
+  // Library form submission
+  libraryForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('lib-name').value.trim();
+    const modelNumber = document.getElementById('lib-model').value.trim();
+    const voltage = parseFloat(document.getElementById('lib-voltage').value);
+    const current = parseFloat(document.getElementById('lib-current').value);
+    const mass = parseFloat(document.getElementById('lib-mass').value);
+
+    if (name && voltage > 0 && current > 0 && mass > 0) {
+      const newComp = { name, modelNumber, voltage, current, mass };
+      globalComponents.push(newComp);
+      saveGlobalComponents();
+      updateGlobalComponentsList();
+      libraryForm.reset();
+      showSuccess('Component added to library!');
+    } else {
+      alert('Please fill in all required fields with valid values.');
+    }
+  });
 
   // Update charts whenever data changes
   window.updateChartsOnDataChange = function() {
