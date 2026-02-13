@@ -1,4 +1,134 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Add loading state management
+    const loadingStates = new Map();
+
+    function setLoading(button, loading) {
+        if (loading) {
+            loadingStates.set(button, button.textContent);
+            button.textContent = 'Processing...';
+            button.disabled = true;
+            button.style.opacity = '0.7';
+        } else {
+            button.textContent = loadingStates.get(button) || button.textContent;
+            button.disabled = false;
+            button.style.opacity = '1';
+            loadingStates.delete(button);
+        }
+    }
+
+    // Enhanced button feedback
+    document.addEventListener('click', function(e) {
+        if (e.target.tagName === 'BUTTON') {
+            const button = e.target;
+            button.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                button.style.transform = '';
+            }, 150);
+        }
+    });
+
+    // Smooth scrolling for navigation
+    document.querySelectorAll('button[data-tab]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const target = document.getElementById(this.dataset.tab + '-tab');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    // Add success animations
+    function showSuccess(message) {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, var(--success-color), var(--accent-color));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--glow);
+            z-index: 1000;
+            animation: slideInRight 0.5s ease-out;
+            font-weight: 600;
+        `;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOutRight 0.5s ease-in';
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + S to save current model
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            if (currentModel) {
+                updateModelBtn.click();
+            } else {
+                saveNewModelBtn.click();
+            }
+        }
+
+        // Ctrl/Cmd + E to export
+        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+            e.preventDefault();
+            exportDataBtn.click();
+        }
+
+        // Ctrl/Cmd + I to import
+        if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+            e.preventDefault();
+            importDataBtn.click();
+        }
+
+        // Tab navigation
+        if (e.key === 'Tab') {
+            const tabs = Array.from(document.querySelectorAll('.tab-button'));
+            const activeTab = document.querySelector('.tab-button.active');
+            const currentIndex = tabs.indexOf(activeTab);
+
+            if (e.shiftKey) {
+                // Previous tab
+                const prevIndex = currentIndex > 0 ? currentIndex - 1 : tabs.length - 1;
+                tabs[prevIndex].click();
+            } else {
+                // Next tab
+                const nextIndex = currentIndex < tabs.length - 1 ? currentIndex + 1 : 0;
+                tabs[nextIndex].click();
+            }
+            e.preventDefault();
+        }
+    });
+
+    // Add tooltip for keyboard shortcuts
+    const tooltip = document.createElement('div');
+    tooltip.id = 'keyboard-tooltip';
+    tooltip.innerHTML = `
+        <div style="position: fixed; bottom: 20px; left: 20px; background: var(--card-bg); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 8px; padding: 1rem; font-size: 0.85rem; color: var(--neutral-text); z-index: 1000; backdrop-filter: blur(10px); display: none;">
+            <strong>Keyboard Shortcuts:</strong><br>
+            Ctrl+S: Save Model<br>
+            Ctrl+E: Export Data<br>
+            Ctrl+I: Import Data<br>
+            Tab: Switch Tabs
+        </div>
+    `;
+    document.body.appendChild(tooltip);
+
+    let tooltipTimeout;
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey || e.metaKey) {
+            clearTimeout(tooltipTimeout);
+            tooltip.style.display = 'block';
+            tooltipTimeout = setTimeout(() => {
+                tooltip.style.display = 'none';
+            }, 3000);
+        }
+    });
     const powerBudgetBtn = document.getElementById('power-budget-btn');
     const linkBudgetBtn = document.getElementById('link-budget-btn');
     const powerSection = document.getElementById('power-budget-section');
@@ -20,6 +150,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const modelForm = document.getElementById('model-form');
     const modelList = document.getElementById('model-list');
+
+    // Budget navigation
+    powerBudgetBtn.addEventListener('click', function() {
+        powerSection.classList.remove('hidden');
+        linkSection.classList.add('hidden');
+        powerBudgetBtn.classList.add('active');
+        linkBudgetBtn.classList.remove('active');
+    });
+
+    linkBudgetBtn.addEventListener('click', function() {
+        powerSection.classList.add('hidden');
+        linkSection.classList.remove('hidden');
+        powerBudgetBtn.classList.remove('active');
+        linkBudgetBtn.classList.add('active');
+    });
 
     // Model Form
     modelForm.addEventListener('submit', function(e) {
@@ -50,6 +195,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const calculateBatteryBtn = document.getElementById('calculate-battery');
     const batteryResults = document.getElementById('battery-results');
     const clearAllDataBtn = document.getElementById('clear-all-data');
+    const exportDataBtn = document.getElementById('export-data');
+    const importDataBtn = document.getElementById('import-data');
+    const importFileInput = document.getElementById('import-file');
 
     let currentModel = null;
 
@@ -58,43 +206,8 @@ document.addEventListener('DOMContentLoaded', function() {
     let modes = [];
     let totalPower = 0;
 
-    // Load saved global components
-    const savedGlobal = localStorage.getItem('globalComponents');
-    if (savedGlobal) {
-        try {
-            globalComponents = JSON.parse(savedGlobal);
-        } catch (e) {
-            globalComponents = [];
-        }
-    }
-
-    // Load saved modes on start
-    const savedModes = localStorage.getItem('modes');
-    if (savedModes) {
-        try {
-            modes = JSON.parse(savedModes);
-            console.log('Loaded modes from localStorage:', modes);
-            modes.forEach(mode => {
-                mode.activeComponents = new Set(mode.activeComponents || []);
-            });
-        } catch (e) {
-            console.error('Error loading modes:', e);
-            modes = [];
-        }
-    } else {
-        console.log('No saved modes found');
-        modes = [];
-    }
-
-    // Load saved components on start
-    const savedComponents = localStorage.getItem('components');
-    if (savedComponents) {
-        try {
-            components = JSON.parse(savedComponents);
-        } catch (e) {
-            components = [];
-        }
-    }
+    // START WITH CLEAN STATE - Don't auto-load from localStorage
+    // Users must explicitly load a saved model or import data
 
     function saveGlobalComponents() {
         localStorage.setItem('globalComponents', JSON.stringify(globalComponents));
@@ -214,6 +327,108 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     updateCurrentModelInfo();
+
+    // Export Data
+    exportDataBtn.addEventListener('click', function() {
+        setLoading(exportDataBtn, true);
+
+        setTimeout(() => {
+            const exportData = {
+                currentModel,
+                globalComponents,
+                components,
+                modes: modes.map(mode => ({
+                    ...mode,
+                    activeComponents: Array.from(mode.activeComponents)
+                })),
+                modelName: document.getElementById('model-name').value,
+                modelDesc: document.getElementById('model-desc').value,
+                dod: document.getElementById('dod').value,
+                efficiency: document.getElementById('efficiency').value,
+                busVoltage: document.getElementById('bus-voltage').value,
+                exportDate: new Date().toISOString()
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `surge-project-${currentModel || 'untitled'}-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            setLoading(exportDataBtn, false);
+            showSuccess('Data exported successfully!');
+        }, 500); // Simulate processing time
+    });
+
+    // Import Data
+    importDataBtn.addEventListener('click', function() {
+        importFileInput.click();
+    });
+
+    importFileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            setLoading(importDataBtn, true);
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const importedData = JSON.parse(event.target.result);
+
+                    // Validate structure
+                    if (!importedData.globalComponents || !importedData.components || !importedData.modes) {
+                        throw new Error('Invalid file format');
+                    }
+
+                    // Load the data
+                    globalComponents = importedData.globalComponents || [];
+                    components = importedData.components || [];
+                    modes = (importedData.modes || []).map(mode => ({
+                        ...mode,
+                        activeComponents: new Set(mode.activeComponents || [])
+                    }));
+                    currentModel = importedData.currentModel || null;
+
+                    // Restore form values
+                    if (importedData.modelName) document.getElementById('model-name').value = importedData.modelName;
+                    if (importedData.modelDesc) document.getElementById('model-desc').value = importedData.modelDesc;
+                    if (importedData.dod) document.getElementById('dod').value = importedData.dod;
+                    if (importedData.efficiency) document.getElementById('efficiency').value = importedData.efficiency;
+                    if (importedData.busVoltage) document.getElementById('bus-voltage').value = importedData.busVoltage;
+
+                    // Save to localStorage
+                    saveGlobalComponents();
+                    saveComponents();
+                    saveModes();
+
+                    // Update UI
+                    updateCurrentModelInfo();
+                    updateLibraryList();
+                    updateModelList();
+                    updateModesList();
+                    updateTableHeader();
+                    updatePowerTable();
+                    window.updateTotalPower();
+                    loadModelList();
+
+                    setLoading(importDataBtn, false);
+                    showSuccess('Data imported successfully!');
+                } catch (error) {
+                    console.error('Import error:', error);
+                    setLoading(importDataBtn, false);
+                    alert('Error importing file. Make sure it\'s a valid SURGE project file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+        // Reset input
+        importFileInput.value = '';
+    });
 
     // Clear All Data
     clearAllDataBtn.addEventListener('click', function() {
@@ -435,6 +650,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Store totalEnergy for battery calc
         window.totalEnergy = totalEnergy;
+
+        // Update charts
+        window.updateChartsOnDataChange();
     };
 
     window.toggleComponentMode = function(compIdx, modeIdx) {
@@ -514,11 +732,505 @@ document.addEventListener('DOMContentLoaded', function() {
         window.updateTotalPower();
     };
 
-    // Initial updates for loaded components
-    updateLibraryList();
-    updateModelList();
-    updateModesList();
-    updateTableHeader();
-    updatePowerTable();
-    window.updateTotalPower();
+    // Chart instances
+    let powerByModeChart = null;
+    let energyDistributionChart = null;
+    let powerTimeChart = null;
+    let batteryAnalysisChart = null;
+
+    function updateCharts() {
+        updatePowerByModeChart();
+        updateEnergyDistributionChart();
+        updatePowerTimeChart();
+        updateBatteryAnalysisChart();
+    }
+
+    function updatePowerByModeChart() {
+        const ctx = document.getElementById('powerByModeChart');
+        if (!ctx) return;
+
+        const labels = modes.map(m => m.name);
+        const data = modes.map(m => {
+            let total = 0;
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    total += components[idx].voltage * components[idx].current;
+                }
+            });
+            return total;
+        });
+
+        if (powerByModeChart) powerByModeChart.destroy();
+        powerByModeChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels.length > 0 ? labels : ['No modes'],
+                datasets: [{
+                    label: 'Power (W)',
+                    data: data.length > 0 ? data : [0],
+                    backgroundColor: 'rgba(0, 212, 255, 0.8)',
+                    borderColor: 'rgba(0, 212, 255, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 12
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Power (W)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 11
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updateEnergyDistributionChart() {
+        const ctx = document.getElementById('energyDistributionChart');
+        if (!ctx) return;
+
+        const labels = modes.map(m => m.name);
+        const energyData = modes.map(m => {
+            let total = 0;
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    total += components[idx].voltage * components[idx].current * (m.duration || 0);
+                }
+            });
+            return total;
+        });
+
+        if (energyDistributionChart) energyDistributionChart.destroy();
+        energyDistributionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.length > 0 ? labels : ['No data'],
+                datasets: [{
+                    data: energyData.length > 0 ? energyData : [1],
+                    backgroundColor: [
+                        'rgba(0, 212, 255, 0.8)',
+                        'rgba(255, 107, 53, 0.8)',
+                        'rgba(46, 213, 115, 0.8)',
+                        'rgba(156, 39, 176, 0.8)',
+                        'rgba(255, 193, 7, 0.8)'
+                    ],
+                    borderColor: 'rgba(10, 10, 10, 0.8)',
+                    borderWidth: 3,
+                    hoverBorderColor: 'rgba(255, 255, 255, 0.8)',
+                    hoverBorderWidth: 4,
+                    shadowColor: 'rgba(0, 212, 255, 0.5)',
+                    shadowBlur: 15,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0',
+                            padding: 20,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 12
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                return context.label + ': ' + context.parsed.toFixed(2) + ' Wh (' + percentage + '%)';
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    function updatePowerTimeChart() {
+        const ctx = document.getElementById('powerTimeChart');
+        if (!ctx) return;
+
+        const labels = [];
+        const powerData = [];
+        let cumulativeTime = 0;
+
+        modes.forEach(m => {
+            labels.push((cumulativeTime).toFixed(2) + 'h');
+            let total = 0;
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    total += components[idx].voltage * components[idx].current;
+                }
+            });
+            powerData.push(total);
+            cumulativeTime += m.duration || 0;
+        });
+
+        if (powerTimeChart) powerTimeChart.destroy();
+        powerTimeChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels.length > 0 ? labels : ['No data'],
+                datasets: [{
+                    label: 'Power Draw (W)',
+                    data: powerData.length > 0 ? powerData : [0],
+                    borderColor: 'rgba(0, 212, 255, 1)',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    borderWidth: 4,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(0, 212, 255, 1)',
+                    pointBorderColor: 'rgba(10, 10, 10, 0.8)',
+                    pointBorderWidth: 3,
+                    pointRadius: 8,
+                    pointHoverRadius: 12,
+                    shadowColor: 'rgba(0, 212, 255, 0.5)',
+                    shadowBlur: 10,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Rajdhani',
+                                size: 12,
+                                weight: '500'
+                            },
+                            color: '#e0e0e0'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 12
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Power (W)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 11
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time (hours)',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                }
+            }
+        });
+    }
+
+    function updateBatteryAnalysisChart() {
+        const ctx = document.getElementById('batteryAnalysisChart');
+        if (!ctx) return;
+
+        const dod = parseFloat(document.getElementById('dod').value) / 100;
+        const efficiency = parseFloat(document.getElementById('efficiency').value) / 100;
+        const busVoltage = parseFloat(document.getElementById('bus-voltage').value);
+        
+        let totalEnergy = 0;
+        modes.forEach(m => {
+            m.activeComponents.forEach(idx => {
+                if (components[idx]) {
+                    totalEnergy += components[idx].voltage * components[idx].current * (m.duration || 0);
+                }
+            });
+        });
+
+        const requiredCapacityWh = totalEnergy / (dod * efficiency) || 0;
+        const requiredCapacityAh = requiredCapacityWh / busVoltage || 0;
+        const margin = Math.max(0, requiredCapacityWh - totalEnergy) / Math.max(1, requiredCapacityWh) * 100 || 0;
+
+        if (batteryAnalysisChart) batteryAnalysisChart.destroy();
+        batteryAnalysisChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Energy Used (Wh)', 'Required Capacity (Wh)', 'Safety Margin (%)'],
+                datasets: [{
+                    label: 'Battery Analysis',
+                    data: [totalEnergy, requiredCapacityWh, margin],
+                    backgroundColor: [
+                        'rgba(245, 127, 23, 0.8)',   // Energy Used - Orange
+                        'rgba(21, 101, 192, 0.8)',   // Required Capacity - Blue
+                        'rgba(56, 142, 60, 0.8)'     // Safety Margin - Green
+                    ],
+                    borderColor: [
+                        'rgba(245, 127, 23, 1)',
+                        'rgba(21, 101, 192, 1)',
+                        'rgba(56, 142, 60, 1)'
+                    ],
+                    borderWidth: 3,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: [
+                        'rgba(245, 127, 23, 1)',
+                        'rgba(21, 101, 192, 1)',
+                        'rgba(56, 142, 60, 1)'
+                    ],
+                    hoverBorderWidth: 4,
+                    shadowColor: 'rgba(0, 212, 255, 0.3)',
+                    shadowBlur: 8,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 2
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 10, 10, 0.95)',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#e0e0e0',
+                        borderColor: 'rgba(0, 212, 255, 0.5)',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        titleFont: {
+                            family: 'Orbitron',
+                            size: 14,
+                            weight: '600'
+                        },
+                        bodyFont: {
+                            family: 'Space Mono',
+                            size: 12
+                        },
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataIndex === 2) {
+                                    return 'Safety Margin: ' + context.parsed.x.toFixed(1) + '%';
+                                }
+                                return context.label + ': ' + context.parsed.x.toFixed(2) + ' Wh';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Value',
+                            color: '#00d4ff',
+                            font: {
+                                family: 'Orbitron',
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Space Mono',
+                                size: 11
+                            }
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: 'rgba(0, 212, 255, 0.1)',
+                            borderColor: 'rgba(0, 212, 255, 0.3)'
+                        },
+                        ticks: {
+                            color: '#e0e0e0',
+                            font: {
+                                family: 'Rajdhani',
+                                size: 11,
+                                weight: '500'
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
+    }
+
+    // Update charts whenever data changes
+    window.updateChartsOnDataChange = function() {
+        setTimeout(updateCharts, 100);
+    };
+
+    // Initial chart setup
+    updateCharts();
 });

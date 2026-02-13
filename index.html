@@ -1,18 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SURGE - Advanced Space Mission Budget Calculator. Analyze power systems, link budgets, and mission performance with real-time visualization.">
+    <meta name="keywords" content="space mission, power budget, link budget, satellite, aerospace, engineering">
+    <meta name="author" content="SURGE Team">
     <title>Space Mission Budget Calculator</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E◆%3C/text%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 </head>
 <body>
     <header>
-        <h1>Space Mission Budget Calculator</h1>
-        <nav>
-            <button id="power-budget-btn">Power Budget</button>
-            <button id="link-budget-btn">Link Budget</button>
-        </nav>
+        <div class="header-content">
+            <div class="logo-section">
+                <h1>◆ SURGE</h1>
+                <p class="subtitle">Space Mission Budget Calculator</p>
+            </div>
+            <nav class="main-nav">
+                <button id="power-budget-btn" class="nav-btn active">Power Budget</button>
+                <button id="link-budget-btn" class="nav-btn">Link Budget</button>
+            </nav>
+        </div>
     </header>
     <main>
         <section id="power-budget-section" class="budget-section">
@@ -37,6 +48,11 @@
                     <button id="load-selected-model">Load</button>
                 </div>
                 <div id="current-model-info"></div>
+                <div class="button-group">
+                    <button id="export-data" class="btn-secondary">Export Data</button>
+                    <button id="import-data" class="btn-secondary">Import Data</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
                 <button id="clear-all-data" style="background-color: #f44336; color: white; margin-top: 1rem;">Clear All Data</button>
                 <p style="color: #666; font-size: 0.9em; margin-top: 0.5rem;">Warning: This will delete all saved models, components, and modes permanently.</p>
             </section>
@@ -187,6 +203,30 @@
             </div>
         </section>
     </main>
+
+    <!-- Power System Performance Charts -->
+    <section id="charts-section" class="charts-container">
+        <h2>Power System Performance Analysis</h2>
+        <div class="charts-grid">
+            <div class="chart-wrapper">
+                <h3>Power Consumption by Mode</h3>
+                <canvas id="powerByModeChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Energy Distribution</h3>
+                <canvas id="energyDistributionChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Power vs Time</h3>
+                <canvas id="powerTimeChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <h3>Battery Capacity Analysis</h3>
+                <canvas id="batteryAnalysisChart"></canvas>
+            </div>
+        </div>
+    </section>
+
     <script src="script.js"></script>
 </body>
 </html>
