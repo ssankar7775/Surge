@@ -38,7 +38,7 @@ async function testPerformance() {
     }
 
     // Wait for page to fully load
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Test 1: Check bundle size
     const resources = await page.evaluate(() => {
@@ -85,7 +85,7 @@ async function testPerformance() {
       const button = await page.$(buttonId);
       if (button) {
         await button.click();
-        await page.waitForTimeout(1000);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
 
@@ -136,11 +136,11 @@ async function testPerformance() {
     // Perform some operations
     for (let i = 0; i < 5; i++) {
       await page.click('#power-budget-btn');
-      await page.waitForTimeout(500);
+      await new Promise(resolve => setTimeout(resolve, 500));
       await page.click('#link-budget-btn');
-      await page.waitForTimeout(500);
+      await new Promise(resolve => setTimeout(resolve, 500));
       await page.click('#system-performance-btn');
-      await page.waitForTimeout(500);
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     const finalMemory = await page.evaluate(() => {

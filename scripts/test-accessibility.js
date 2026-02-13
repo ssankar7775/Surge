@@ -22,7 +22,7 @@ async function testAccessibility() {
     const fileUrl = `file://${htmlPath}`;
 
     await page.goto(fileUrl, { waitUntil: 'networkidle0' });
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Test 1: Check for proper heading hierarchy
     const headings = await page.evaluate(() => {
@@ -76,11 +76,17 @@ async function testAccessibility() {
 
     // Test 3: Check for proper form labels
     const forms = await page.evaluate(() => {
-      const inputs = document.querySelectorAll('input, select, textarea');
+      const inputs = document.querySelectorAll('input:not([type="hidden"]):not([style*="display: none"]), select, textarea');
       let properlyLabeled = 0;
       let improperlyLabeled = 0;
 
       inputs.forEach(input => {
+        // Skip hidden inputs
+        const style = window.getComputedStyle(input);
+        if (style.display === 'none' || input.type === 'hidden') {
+          return;
+        }
+
         const id = input.id;
         const label = document.querySelector(`label[for="${id}"]`);
         const ariaLabel = input.getAttribute('aria-label');
@@ -213,7 +219,7 @@ async function testAccessibility() {
 
     // Test 10: Check for focus management
     await page.keyboard.press('Tab');
-    await page.waitForTimeout(500);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const focusVisible = await page.evaluate(() => {
       const activeElement = document.activeElement;

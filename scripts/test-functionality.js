@@ -32,7 +32,7 @@ async function testFunctionality() {
     await page.goto(fileUrl, { waitUntil: 'networkidle0' });
 
     // Wait for page to load
-    await page.waitForTimeout(2000);
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     // Test 1: Check if page title is correct
     const title = await page.title();
@@ -73,7 +73,7 @@ async function testFunctionality() {
       if (powerBtn && linkBtn && systemBtn) {
         // Click power budget button
         await powerBtn.click();
-        await page.waitForTimeout(500);
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const powerSectionVisible = await page.evaluate(() => {
           const section = document.getElementById('power-budget-section');
@@ -89,7 +89,7 @@ async function testFunctionality() {
 
         // Click link budget button
         await linkBtn.click();
-        await page.waitForTimeout(500);
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const linkSectionVisible = await page.evaluate(() => {
           const section = document.getElementById('link-budget-section');
@@ -105,7 +105,7 @@ async function testFunctionality() {
 
         // Click system performance button
         await systemBtn.click();
-        await page.waitForTimeout(500);
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const systemSectionVisible = await page.evaluate(() => {
           const section = document.getElementById('system-performance-section');
@@ -154,7 +154,7 @@ async function testFunctionality() {
 
         // Submit form
         await form.evaluate(form => form.dispatchEvent(new Event('submit')));
-        await page.waitForTimeout(1000);
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Check if results are shown
         const resultsVisible = await page.evaluate(() => {
@@ -204,7 +204,7 @@ async function testFunctionality() {
       jsErrors.push(error.message);
     });
 
-    await page.waitForTimeout(1000);
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     if (jsErrors.length === 0) {
       console.log('✅ No JavaScript runtime errors');
@@ -215,7 +215,7 @@ async function testFunctionality() {
 
     // Test 9: Check responsive design
     await page.setViewport({ width: 768, height: 1024 });
-    await page.waitForTimeout(500);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const mobileLayout = await page.evaluate(() => {
       const nav = document.querySelector('.main-nav');

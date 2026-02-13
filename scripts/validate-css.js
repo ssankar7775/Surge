@@ -27,11 +27,11 @@ try {
     '--primary-color',
     '--secondary-color',
     '--accent-color',
-    '--background-color',
-    '--text-color',
-    '--success-color',
+    '--danger-color',
     '--warning-color',
-    '--error-color'
+    '--success-color',
+    '--neutral-bg',
+    '--neutral-text'
   ];
 
   requiredVars.forEach(varName => {
