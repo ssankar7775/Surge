@@ -24,6 +24,8 @@
                 <button id="power-budget-btn" class="nav-btn active">Power Budget</button>
                 <button id="link-budget-btn" class="nav-btn">Link Budget</button>
                 <button id="system-performance-btn" class="nav-btn">System Performance</button>
+                <button id="system-definition-btn" class="nav-btn">System Definition</button>
+                <button id="mass-budget-btn" class="nav-btn">Mass Budget</button>
             </nav>
         </div>
     </header>
@@ -371,6 +373,149 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Mass Budget Performance Charts -->
+            <section id="system-mass-charts-section" class="charts-container">
+                <h3>Mass Budget Performance</h3>
+                <div class="charts-grid">
+                    <div class="chart-wrapper">
+                        <h4>Mass by Component Type</h4>
+                        <canvas id="systemMassByComponentChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Mass Distribution</h4>
+                        <canvas id="systemMassDistributionChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Mass vs Power Consumption</h4>
+                        <canvas id="systemMassVsPowerChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Component Count by Type</h4>
+                        <canvas id="systemComponentCountChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <section id="system-definition-section" class="budget-section hidden">
+            <h2>System Definition</h2>
+            <div class="tabs">
+                <button class="tab-button active" data-tab="models">Model Management</button>
+                <button class="tab-button" data-tab="sysdef-modes">Modes</button>
+                <button class="tab-button" data-tab="sysdef-library">Component Library</button>
+            </div>
+            <div class="tab-content" id="models-tab">
+                <h3>Model Management</h3>
+                <p>Save, load, and manage your spacecraft models.</p>
+                <div class="form-group">
+                    <label for="model-name">Model Name:</label>
+                    <input type="text" id="model-name" placeholder="Enter model name">
+                </div>
+                <div class="form-group">
+                    <label for="model-desc">Description (optional):</label>
+                    <textarea id="model-desc" placeholder="Enter description"></textarea>
+                </div>
+                <button id="save-new-model">Save as New Model</button>
+                <button id="update-model">Update Current Model</button>
+                <div class="form-group">
+                    <label for="load-model">Load Model:</label>
+                    <select id="load-model">
+                        <option value="">Select a model</option>
+                    </select>
+                    <button id="load-selected-model">Load</button>
+                </div>
+                <div id="current-model-info"></div>
+                <div class="button-group">
+                    <button id="export-data" class="btn-secondary">Export Data</button>
+                    <button id="import-data" class="btn-secondary">Import Data</button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
+                </div>
+                <button id="clear-all-data" style="background-color: #f44336; color: white; margin-top: 1rem;">Clear All Data</button>
+                <p style="color: #666; font-size: 0.9em; margin-top: 0.5rem;">Warning: This will delete all saved models, components, and modes permanently.</p>
+            </div>
+            <div class="tab-content hidden" id="sysdef-modes-tab">
+                <h3>Define Operating Modes</h3>
+                <p>Create different operating modes for your spacecraft systems.</p>
+                <div class="form-group">
+                    <label for="mode-name-input">Mode Name:</label>
+                    <input type="text" id="mode-name-input">
+                    <label for="mode-duration">Duration (hours):</label>
+                    <input type="number" id="mode-duration" step="0.01">
+                    <label for="copy-from">Copy from:</label>
+                    <select id="copy-from">
+                        <option value="">None</option>
+                    </select>
+                    <button id="add-mode-global">Add Mode</button>
+                </div>
+                <ul id="modes-list"></ul>
+            </div>
+            <div class="tab-content hidden" id="sysdef-library-tab">
+                <h3>Component Library</h3>
+                <p>Create and manage reusable components that can be added to any model.</p>
+                <form id="library-form">
+                    <div class="form-group">
+                        <label for="lib-name">Component Name/Description:</label>
+                        <input type="text" id="lib-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lib-model">Component Model Number:</label>
+                        <input type="text" id="lib-model">
+                    </div>
+                    <div class="form-group">
+                        <label for="lib-voltage">Voltage (V):</label>
+                        <input type="number" id="lib-voltage" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lib-current">Current (A):</label>
+                        <input type="number" id="lib-current" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lib-mass">Mass (kg):</label>
+                        <input type="number" id="lib-mass" step="0.01" required>
+                    </div>
+                    <button type="submit">Add Component</button>
+                </form>
+                <h4>Available Components</h4>
+                <ul id="global-components-list"></ul>
+            </div>
+        </section>
+
+        <section id="mass-budget-section" class="budget-section hidden">
+            <h2>Mass Budget</h2>
+            <p>Analyze the mass distribution of your spacecraft components.</p>
+            
+            <div class="mass-summary">
+                <div class="result-item">
+                    <span class="result-label">Total Mass:</span>
+                    <span id="total-mass" class="result-value">0 kg</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Component Count:</span>
+                    <span id="component-count" class="result-value">0</span>
+                </div>
+            </div>
+
+            <div class="mass-breakdown">
+                <h3>Mass Breakdown by Component</h3>
+                <div id="mass-components-list" class="components-list">
+                    <p>No components added yet. Add components in the System Definition > Component Library section.</p>
+                </div>
+            </div>
+
+            <div class="mass-charts">
+                <h3>Mass Distribution</h3>
+                <div class="charts-grid">
+                    <div class="chart-wrapper">
+                        <h4>Mass by Component Type</h4>
+                        <canvas id="massByComponentChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h4>Mass Distribution Pie Chart</h4>
+                        <canvas id="massDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
