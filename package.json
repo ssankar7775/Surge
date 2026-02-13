@@ -1,0 +1,64 @@
+{
+  "name": "surge-space-mission-calculator",
+  "version": "1.0.0",
+  "description": "Advanced Space Mission Budget Calculator with real-time visualization",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "build": "npm run validate && npm run test",
+    "validate": "npm run validate-html && npm run validate-css && npm run validate-js",
+    "validate-html": "node scripts/validate-html.js",
+    "validate-css": "node scripts/validate-css.js",
+    "validate-js": "node scripts/validate-js.js",
+    "test": "npm run test-functionality && npm run test-performance && npm run test-accessibility",
+    "test-functionality": "node scripts/test-functionality.js",
+    "test-performance": "node scripts/test-performance.js",
+    "test-accessibility": "node scripts/test-accessibility.js",
+    "test-all": "node scripts/run-all-tests.js",
+    "deploy": "npm run build && gh-pages -d .",
+    "predeploy": "npm run build",
+    "lint": "npm run lint-js && npm run lint-css",
+    "lint-js": "eslint script.js --fix",
+    "lint-css": "stylelint styles.css --fix",
+    "serve": "npm start",
+    "dev": "npm start",
+    "ci": "npm run build && npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ssankar7775/Surge.git"
+  },
+  "keywords": [
+    "space",
+    "mission",
+    "budget",
+    "calculator",
+    "aerospace",
+    "engineering",
+    "satellite",
+    "link-budget",
+    "power-budget"
+  ],
+  "author": "SURGE Team",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ssankar7775/Surge/issues"
+  },
+  "homepage": "https://ssankar7775.github.io/Surge",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "stylelint": "^16.2.1",
+    "stylelint-config-standard": "^35.0.0",
+    "gh-pages": "^6.1.1",
+    "puppeteer": "^22.6.3",
+    "html-validator": "^6.0.1",
+    "css-validator": "^1.0.4",
+    "jsdom": "^24.0.0",
+    "axe-core": "^4.9.0",
+    "lighthouse": "^12.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
