@@ -577,9 +577,9 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('lib-model').value = '';
       document.getElementById('lib-voltage').value = '';
       document.getElementById('lib-current').value = '';
-      document.getElementById('mode-name-input').value = '';
-      document.getElementById('mode-duration').value = '';
-      document.getElementById('copy-from').value = '';
+      document.getElementById('sysdef-mode-name-input').value = '';
+      document.getElementById('sysdef-mode-duration').value = '';
+      document.getElementById('sysdef-copy-from').value = '';
       document.getElementById('dod').value = '80';
       document.getElementById('efficiency').value = '90';
       document.getElementById('bus-voltage').value = '28';
@@ -642,9 +642,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Add Global Mode
   addModeGlobalBtn.addEventListener('click', function() {
-    const name = document.getElementById('mode-name-input').value.trim();
-    const duration = parseFloat(document.getElementById('mode-duration').value) || 0;
-    const copyIdx = copyFrom.value;
+    const name = document.getElementById('sysdef-mode-name-input').value.trim();
+    const duration = parseFloat(document.getElementById('sysdef-mode-duration').value) || 0;
+    const copyIdx = document.getElementById('sysdef-copy-from').value;
     if (name && !modes.find(m => m.name === name)) {
       const activeComponents = copyIdx ? new Set(modes[copyIdx].activeComponents) : new Set();
       const copiedDuration = copyIdx ? modes[copyIdx].duration : 0;
@@ -654,9 +654,9 @@ document.addEventListener('DOMContentLoaded', function() {
       updateTableHeader();
       updatePowerTable();
       window.updateTotalPower();
-      document.getElementById('mode-name-input').value = '';
-      document.getElementById('mode-duration').value = '';
-      copyFrom.value = '';
+      document.getElementById('sysdef-mode-name-input').value = '';
+      document.getElementById('sysdef-mode-duration').value = '';
+      document.getElementById('sysdef-copy-from').value = '';
     }
   });
 
@@ -3807,6 +3807,30 @@ document.addEventListener('DOMContentLoaded', function() {
       alert('Please fill in all required fields with valid values.');
     }
   });
+
+  // System Definition Library form submission
+  const sysdefLibraryForm = document.getElementById('sysdef-library-form');
+  if (sysdefLibraryForm) {
+    sysdefLibraryForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('sysdef-lib-name').value.trim();
+      const modelNumber = document.getElementById('sysdef-lib-model').value.trim();
+      const voltage = parseFloat(document.getElementById('sysdef-lib-voltage').value);
+      const current = parseFloat(document.getElementById('sysdef-lib-current').value);
+      const mass = parseFloat(document.getElementById('sysdef-lib-mass').value);
+
+      if (name && voltage > 0 && current > 0 && mass > 0) {
+        const newComp = { name, modelNumber, voltage, current, mass };
+        globalComponents.push(newComp);
+        saveGlobalComponents();
+        updateGlobalComponentsList();
+        sysdefLibraryForm.reset();
+        showSuccess('Component added to library!');
+      } else {
+        alert('Please fill in all required fields with valid values.');
+      }
+    });
+  }
 
   // Update charts whenever data changes
   window.updateChartsOnDataChange = function() {

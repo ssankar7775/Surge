@@ -438,12 +438,12 @@
                 <h3>Define Operating Modes</h3>
                 <p>Create different operating modes for your spacecraft systems.</p>
                 <div class="form-group">
-                    <label for="mode-name-input">Mode Name:</label>
-                    <input type="text" id="mode-name-input">
-                    <label for="mode-duration">Duration (hours):</label>
-                    <input type="number" id="mode-duration" step="0.01">
-                    <label for="copy-from">Copy from:</label>
-                    <select id="copy-from">
+                    <label for="sysdef-mode-name-input">Mode Name:</label>
+                    <input type="text" id="sysdef-mode-name-input">
+                    <label for="sysdef-mode-duration">Duration (hours):</label>
+                    <input type="number" id="sysdef-mode-duration" step="0.01">
+                    <label for="sysdef-copy-from">Copy from:</label>
+                    <select id="sysdef-copy-from">
                         <option value="">None</option>
                     </select>
                     <button id="add-mode-global">Add Mode</button>
@@ -453,26 +453,26 @@
             <div class="tab-content hidden" id="sysdef-library-tab">
                 <h3>Component Library</h3>
                 <p>Create and manage reusable components that can be added to any model.</p>
-                <form id="library-form">
+                <form id="sysdef-library-form">
                     <div class="form-group">
-                        <label for="lib-name">Component Name/Description:</label>
-                        <input type="text" id="lib-name" required>
+                        <label for="sysdef-lib-name">Component Name/Description:</label>
+                        <input type="text" id="sysdef-lib-name" required>
                     </div>
                     <div class="form-group">
-                        <label for="lib-model">Component Model Number:</label>
-                        <input type="text" id="lib-model">
+                        <label for="sysdef-lib-model">Component Model Number:</label>
+                        <input type="text" id="sysdef-lib-model">
                     </div>
                     <div class="form-group">
-                        <label for="lib-voltage">Voltage (V):</label>
-                        <input type="number" id="lib-voltage" step="0.01" required>
+                        <label for="sysdef-lib-voltage">Voltage (V):</label>
+                        <input type="number" id="sysdef-lib-voltage" step="0.01" required>
                     </div>
                     <div class="form-group">
-                        <label for="lib-current">Current (A):</label>
-                        <input type="number" id="lib-current" step="0.01" required>
+                        <label for="sysdef-lib-current">Current (A):</label>
+                        <input type="number" id="sysdef-lib-current" step="0.01" required>
                     </div>
                     <div class="form-group">
-                        <label for="lib-mass">Mass (kg):</label>
-                        <input type="number" id="lib-mass" step="0.01" required>
+                        <label for="sysdef-lib-mass">Mass (kg):</label>
+                        <input type="number" id="sysdef-lib-mass" step="0.01" required>
                     </div>
                     <button type="submit">Add Component</button>
                 </form>
