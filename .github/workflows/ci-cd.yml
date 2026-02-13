@@ -86,23 +86,25 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-
-    - name: Install dependencies
-      run: npm ci
+    - name: Wait for deployment
+      run: |
+        echo "Waiting for site to be available..."
+        for i in {1..30}; do
+          if curl -s -f https://ssankar7775.github.io/Surge > /dev/null; then
+            echo "Site is available!"
+            break
+          fi
+          echo "Waiting... ($i/30)"
+          sleep 10
+        done
 
     - name: Run Lighthouse
-      run: npx lighthouse https://ssankar7775.github.io/Surge --output=json --output-path=lighthouse-results.json
-
-    - name: Upload Lighthouse results
-      uses: actions/upload-artifact@v4
+      uses: treosh/lighthouse-ci-action@v10
       with:
-        name: lighthouse-results
-        path: lighthouse-results.json
+        urls: https://ssankar7775.github.io/Surge
+        configPath: .lighthouserc.json
+        uploadArtifacts: true
+        temporaryPublicStorage: true
 
   notify:
     needs: [test, deploy, lighthouse]
