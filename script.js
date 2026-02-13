@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js failed to load. Please check your internet connection and try again.');
+        alert('Chart.js failed to load. Some features may not work properly.');
+    }
+
     // Add loading state management
     const loadingStates = new Map();
 
@@ -180,8 +186,10 @@ document.addEventListener('DOMContentLoaded', function() {
         linkBudgetBtn.classList.remove('active');
         systemPerformanceBtn.classList.add('active');
 
-        // Update all charts when switching to system performance
-        updateCharts();
+        // Force update all charts when switching to system performance
+        setTimeout(() => {
+            updateCharts();
+        }, 100);
 
         // If link budget results exist, update link charts
         if (!linkResults.classList.contains('hidden')) {
@@ -198,7 +206,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const reqSNR = parseFloat(document.getElementById('required-snr').value);
             const modLoss = parseFloat(document.getElementById('modulation-loss').value);
 
-            updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+            setTimeout(() => {
+                updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+            }, 200);
         }
     });
 
@@ -596,6 +606,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     linkForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        const freq = parseFloat(document.getElementById('frequency').value);
+        const txPower = parseFloat(document.getElementById('transmit-power').value);
+        const txGain = parseFloat(document.getElementById('transmit-gain').value);
+        const txLosses = parseFloat(document.getElementById('transmit-losses').value);
+        const dist = parseFloat(document.getElementById('distance').value);
+        const rxGain = parseFloat(document.getElementById('receive-gain').value);
+        const rxLosses = parseFloat(document.getElementById('receive-losses').value);
+        const atmLoss = parseFloat(document.getElementById('atmospheric-loss').value);
+        const noiseTemp = parseFloat(document.getElementById('noise-temp').value);
+        const bw = parseFloat(document.getElementById('bandwidth').value);
+        const reqSNR = parseFloat(document.getElementById('required-snr').value);
+        const modLoss = parseFloat(document.getElementById('modulation-loss').value);
+
+        if (freq > 0 && !isNaN(txPower) && !isNaN(txGain) && dist > 0 && !isNaN(rxGain) &&
+            !isNaN(txLosses) && !isNaN(rxLosses) && !isNaN(atmLoss) && noiseTemp > 0 && bw > 0) {
+            calculateLinkBudget(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
+            linkResults.classList.remove('hidden');
+        }
+    });
+
+    // Live link budget calculation on input change
+    linkForm.addEventListener('input', function(e) {
         const freq = parseFloat(document.getElementById('frequency').value);
         const txPower = parseFloat(document.getElementById('transmit-power').value);
         const txGain = parseFloat(document.getElementById('transmit-gain').value);
@@ -1974,6 +2006,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // System Performance Chart Functions
     function updateSystemPowerCharts() {
+        // Check if Chart.js is available
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not available, skipping system power chart updates');
+            return;
+        }
+
         // Copy data from main power charts to system performance charts
         updateSystemPowerByModeChart();
         updateSystemEnergyDistributionChart();
@@ -2463,6 +2501,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateSystemLinkBudgetCharts(freq, txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss) {
+        // Check if Chart.js is available
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js not available, skipping system link budget chart updates');
+            return;
+        }
+
         updateSystemLinkMarginVsDistanceChart(freq, txPower, txGain, txLosses, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
         updateSystemSnrVsFrequencyChart(txPower, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
         updateSystemPowerVsTxPowerChart(freq, txGain, txLosses, dist, rxGain, rxLosses, atmLoss, noiseTemp, bw, reqSNR, modLoss);
